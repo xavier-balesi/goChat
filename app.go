@@ -6,17 +6,17 @@ import (
 )
 
 var (
-	ch       chan string
+	ch       chan ui.Message
 	clientUI *ui.ClientUI
 )
 
-func sendHandler(sentence string) {
-	ch <- sentence
+func sendHandler(message ui.Message) {
+	ch <- message
 }
 
 func main() {
 
-	ch = make(chan string)
+	ch = make(chan ui.Message)
 
 	debug_mode := flag.Bool("debug", false, "enable debug mode")
 	flag.Parse()

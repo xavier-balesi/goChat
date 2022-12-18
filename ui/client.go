@@ -8,13 +8,18 @@ import (
 
 const refreshInterval = 100 * time.Millisecond
 
+type Message struct {
+	user    string
+	message string
+}
+
 type ClientUI struct {
 	chatBox   *ChatBox
 	logBox    *LogBox
 	sendInput *tview.InputField
 	app       *tview.Application
 	flexGrid  *tview.Flex
-	ch        chan string
+	incomCh   chan Message
 }
 
 func (c *ClientUI) createGrid(debugMode bool) *tview.Flex {
@@ -30,13 +35,13 @@ func (c *ClientUI) createGrid(debugMode bool) *tview.Flex {
 	return flex
 }
 
-func (c *ClientUI) Init(sendHandler func(string), ch chan string, debugMode bool) {
+func (c *ClientUI) Init(sendHandler func(Message), ch chan Message, debugMode bool) {
 
 	c.chatBox = NewChatBox()
 	c.sendInput = NewSendBox(sendHandler)
 	c.logBox = NewLogBox()
 	c.flexGrid = c.createGrid(debugMode)
-	c.ch = ch
+	c.incomCh = ch
 
 	c.app = tview.NewApplication()
 }
@@ -46,9 +51,9 @@ func (c *ClientUI) channelListener() {
 		time.Sleep(refreshInterval)
 		c.app.QueueUpdateDraw(func() {
 			select {
-			case sentence := <-c.ch:
-				c.logBox.AddLog("DEBUG", "add sentence "+sentence+"\n")
-				c.chatBox.AddMessage("moi", sentence)
+			case sentence := <-c.incomCh:
+				c.logBox.AddLog("DEBUG", "add sentence "+sentence.user+":"+sentence.message+"\n")
+				c.chatBox.AddMessage(sentence.user, sentence.message)
 			default:
 			}
 		})
