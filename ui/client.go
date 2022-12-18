@@ -13,32 +13,30 @@ type ClientUI struct {
 	logBox    *LogBox
 	sendInput *tview.InputField
 	app       *tview.Application
-	grid      *tview.Grid
+	flexGrid  *tview.Flex
 	ch        chan string
 }
 
-func (c *ClientUI) Init(sendHandler func(string), ch chan string, debugNode bool) {
+func (c *ClientUI) createGrid(debugMode bool) *tview.Flex {
+	flex := tview.NewFlex().
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(c.chatBox, 0, 4, false).
+			AddItem(c.sendInput, 1, 1, true), 0, 2, true)
+
+	if debugMode {
+		flex.AddItem(c.logBox, 0, 1, false)
+	}
+
+	return flex
+}
+
+func (c *ClientUI) Init(sendHandler func(string), ch chan string, debugMode bool) {
 
 	c.chatBox = NewChatBox()
 	c.sendInput = NewSendBox(sendHandler)
 	c.logBox = NewLogBox()
+	c.flexGrid = c.createGrid(debugMode)
 	c.ch = ch
-
-	columns := []int{80}
-	if debugNode {
-		columns = append(columns, 80)
-	}
-
-	c.grid = tview.NewGrid().
-		SetRows(10, 1).
-		SetColumns(columns...).
-		SetBorders(false).
-		AddItem(c.chatBox, 0, 0, 1, 1, 0, 0, false).
-		AddItem(c.sendInput, 1, 0, 1, 1, 0, 0, true)
-
-	if debugNode {
-		c.grid.AddItem(c.logBox, 0, 1, 2, 1, 0, 0, false)
-	}
 
 	c.app = tview.NewApplication()
 }
@@ -59,5 +57,5 @@ func (c *ClientUI) channelListener() {
 
 func (c *ClientUI) Start() error {
 	go c.channelListener()
-	return c.app.SetRoot(c.grid, true).Run()
+	return c.app.SetRoot(c.flexGrid, true).Run()
 }
