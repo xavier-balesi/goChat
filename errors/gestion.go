@@ -1,8 +1,7 @@
 package errors
 
-func GestionError(err error) {
+func ErrorHandler(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
-

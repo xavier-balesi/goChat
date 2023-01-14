@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"bufio"
@@ -28,7 +28,7 @@ func main() {
 	flag.Parse()
 
 	clientOptions = ClientOptions{name: *user}
-    log.Debugf("name = %s", clientOptions.name)
+	log.Debugf("name = %s", clientOptions.name)
 
 	conn, err := net.Dial("tcp", config.Host)
 	errors.GestionError(err)
@@ -50,7 +50,7 @@ func inputHandler(conn net.Conn) {
 		text, err := reader.ReadString('\n')
 		errors.GestionError(err)
 
-		payload := fmt.Sprintf("Message\t%s\t%s",clientOptions.name, text)
+		payload := fmt.Sprintf("Message\t%s\t%s", clientOptions.name, text)
 		conn.Write([]byte(payload))
 	}
 }

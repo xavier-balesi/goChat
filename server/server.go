@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bufio"
@@ -12,25 +12,23 @@ import (
 )
 
 type ClientInfo struct {
-    name string
-    conn net.Conn
+	name string
+	conn net.Conn
 }
 
 var clients []ClientInfo
 
-func main() {
-	log.SetLevel(log.DebugLevel)
-
+func Main() {
 	log.Info("Starting chat server...")
 
 	// listen
 	ln, err := net.Listen("tcp", config.Host)
-	chatErrors.GestionError(err)
+	chatErrors.ErrorHandler(err)
 
 	for {
 		// accept connexions
 		conn, err := ln.Accept()
-		chatErrors.GestionError(err)
+		chatErrors.ErrorHandler(err)
 		log.Info("new cient connection from ", conn.RemoteAddr())
 
 		clientName, authErr := authentify(conn)
@@ -39,8 +37,9 @@ func main() {
 			continue
 		}
 
-        clients = append(clients, ClientInfo{name: clientName, conn: conn})
-		go clientHandler(conn)
+		clientInfo := ClientInfo{name: clientName, conn: conn}
+		clients = append(clients, clientInfo)
+		go clientHandler(clientInfo)
 	}
 }
 
@@ -60,7 +59,7 @@ func authentify(conn net.Conn) (string, error) {
 	log.Debugf("received payload : %s", payload)
 	action, clientName := splitPayload(payload)
 	if action == "auth" && isAuthorized(clientName) {
-        log.Infof("client authentified : %s / %s", conn.RemoteAddr(), clientName)
+		log.Infof("client authentified : %s / %s", conn.RemoteAddr(), clientName)
 		return clientName, nil
 	}
 
@@ -68,13 +67,15 @@ func authentify(conn net.Conn) (string, error) {
 }
 
 func isAuthorized(name string) bool {
-    var Authorized = map[string]bool{
-        "xavier": true,
-        "toto": false,
-    }
-    v, exists := Authorized[name]
-    if exists { return v }
-    return false
+	var Authorized = map[string]bool{
+		"xavier": true,
+		"toto":   false,
+	}
+	v, exists := Authorized[name]
+	if exists {
+		return v
+	}
+	return false
 }
 
 func splitPayload(payload string) (string, string) {
@@ -82,31 +83,31 @@ func splitPayload(payload string) (string, string) {
 	return splitted[0], splitted[1]
 }
 
-func clientHandler(conn net.Conn) {
-	buf := bufio.NewReader(conn)
+func clientHandler(client ClientInfo) {
+	buf := bufio.NewReader(client.conn)
 	for {
 		payload, err := buf.ReadString('\n')
 		if err != nil {
-			log.Info("Client disconnected :", conn.RemoteAddr())
+			log.Info("Client disconnected :", client.conn.RemoteAddr())
 			break
 		}
 
 		payload = strings.Split(payload, "\n")[0]
-		log.Debugf("[%s] =msg=> %s", conn.RemoteAddr(), payload)
+		log.Debugf("[%s] =msg=> %s", client.conn.RemoteAddr(), payload)
 
-        response, err := handlePayload(payload)
+		response, err := handlePayload(client.name, payload)
 
 		for _, c := range clients {
-            log.Debugf("writing to client %s : '%s'", c.name, response)
+			log.Debugf("writing to client %s : '%s'", c.name, response)
 			c.conn.Write([]byte(response))
 		}
 	}
 }
 
-func handlePayload(payload string) (string, error) {
+func handlePayload(clientName string, payload string) (string, error) {
 	payload_protocol := strings.Split(payload, "\t")
 	log.Debugf("payload_protocol=%s", payload_protocol)
-    response := []string{"Message", payload_protocol[1], payload_protocol[2]}
+	response := []string{"Message", clientName, payload_protocol[1]}
 
-    return strings.Join(response[:], "\t") + "\n", nil
+	return strings.Join(response[:], "\t") + "\n", nil
 }

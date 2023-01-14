@@ -10,11 +10,11 @@ type ChatBox struct {
 	tview.TextView
 }
 
-func (c *ChatBox) AddMessage(user string, message string) {
+func (c *ChatBox) AddMessage(message UIMessage) {
 	formatMessage := func(u string, m string) string {
 		return fmt.Sprintf("%s> %s\n", u, m)
 	}
-	c.Write([]byte(formatMessage(user, message)))
+	c.Write([]byte(formatMessage(message.User, message.Message)))
 }
 
 func NewChatBox() *ChatBox {

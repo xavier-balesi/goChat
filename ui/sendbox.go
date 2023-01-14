@@ -5,20 +5,16 @@ import (
 	"github.com/rivo/tview"
 )
 
-func makeInputHandler(input *tview.InputField, inputHandler func(Message)) func(tcell.Key) {
+func makeInputHandler(input *tview.InputField, inputHandler func(string)) func(tcell.Key) {
 	return func(key tcell.Key) {
 		if key == tcell.KeyEnter {
-			sentence := Message{
-                user: "moi",
-                message: input.GetText(),
-            }
-			go inputHandler(sentence)
+			go inputHandler(input.GetText())
 			input.SetText("")
 		}
 	}
 }
 
-func NewSendBox(inputHandler func(Message)) *tview.InputField {
+func NewSendBox(inputHandler func(string)) *tview.InputField {
 	var sb *tview.InputField = tview.NewInputField()
 	sb.SetDoneFunc(makeInputHandler(sb, inputHandler))
 	sb.SetFieldBackgroundColor(tcell.ColorBlack)
